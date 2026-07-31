@@ -20,8 +20,26 @@ GOOGLE_CREDENTIALS_FILE = os.getenv(
     "GOOGLE_CREDENTIALS_FILE", str(BASE_DIR / "credentials.json")
 ).strip().strip("'\"")
 GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON", "").strip().strip("'\"")
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "").strip().strip("'\"")
+SPREADSHEET_ID = os.getenv(
+    "SPREADSHEET_ID", "1nZK68DMZj6Vt0sbQ_gzchDL6L4O0Tt1cS6OUdtAihz4"
+).strip().strip("'\"")
 SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "FinanceBot_Database").strip().strip("'\"")
+
+# Auto-generate credentials.json on disk from GOOGLE_CREDENTIALS_JSON env var if missing (for Railway/Cloud)
+_cred_file_path = BASE_DIR / "credentials.json"
+if GOOGLE_CREDENTIALS_JSON and not _cred_file_path.exists():
+    try:
+        import base64
+        _content = GOOGLE_CREDENTIALS_JSON
+        if not _content.startswith("{"):
+            try:
+                _content = base64.b64decode(_content).decode("utf-8")
+            except Exception:
+                pass
+        with open(_cred_file_path, "w", encoding="utf-8") as _f:
+            _f.write(_content)
+    except Exception as _e:
+        print(f"Warning: Failed to write credentials.json from env var: {_e}")
 
 # App Settings
 TIMEZONE = os.getenv("TIMEZONE", "Asia/Jakarta")
