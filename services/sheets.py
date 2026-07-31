@@ -41,11 +41,18 @@ class SheetsService:
 
     def _init_connection(self):
         """Initialize Google Sheets API client."""
-        # 1. Try raw JSON string from environment variable first (ideal for cloud deployment like Railway)
+        # 1. Try raw or base64 JSON string from environment variable first (ideal for cloud deployment like Railway)
         if config.GOOGLE_CREDENTIALS_JSON:
             try:
-                import json
-                info = json.loads(config.GOOGLE_CREDENTIALS_JSON)
+                import json, base64
+                raw_val = config.GOOGLE_CREDENTIALS_JSON.strip().strip("'\"")
+                if not raw_val.startswith("{"):
+                    try:
+                        raw_val = base64.b64decode(raw_val).decode("utf-8")
+                    except Exception:
+                        pass
+
+                info = json.loads(raw_val)
                 if isinstance(info, dict) and "private_key" in info:
                     info["private_key"] = info["private_key"].replace("\\n", "\n")
                 creds = Credentials.from_service_account_info(info, scopes=SCOPES)
