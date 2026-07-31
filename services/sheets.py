@@ -46,13 +46,15 @@ class SheetsService:
             try:
                 import json
                 info = json.loads(config.GOOGLE_CREDENTIALS_JSON)
+                if isinstance(info, dict) and "private_key" in info:
+                    info["private_key"] = info["private_key"].replace("\\n", "\n")
                 creds = Credentials.from_service_account_info(info, scopes=SCOPES)
                 self.client = gspread.authorize(creds)
                 logger.info("Successfully connected to Google Sheets API via GOOGLE_CREDENTIALS_JSON env var")
                 self._ensure_spreadsheet()
                 return
             except Exception as e:
-                logger.warning(f"Failed to authorize via GOOGLE_CREDENTIALS_JSON env var: {e}")
+                logger.error(f"Failed to authorize via GOOGLE_CREDENTIALS_JSON env var: {e}")
 
         # 2. Try credentials.json file on disk
         cred_file = config.GOOGLE_CREDENTIALS_FILE
@@ -64,9 +66,9 @@ class SheetsService:
                 self._ensure_spreadsheet()
                 return
             except Exception as e:
-                logger.warning(f"Failed to authorize Google Sheets API: {e}. Falling back to mock mode.")
+                logger.error(f"Failed to authorize Google Sheets API via file: {e}")
 
-        logger.info("Credentials file not found or invalid. Running SheetsService in Mock/Local mode.")
+        logger.warning("Credentials not found or invalid. Running SheetsService in Graceful Local Mock mode.")
         self.is_mock_mode = True
 
     def _ensure_spreadsheet(self):
