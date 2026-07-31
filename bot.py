@@ -82,6 +82,16 @@ def main():
         MessageHandler(filters.TEXT & (~filters.COMMAND), text_transaction_handler)
     )
 
+    # Register Error Handler for Conflict/Network errors
+    async def handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        from telegram.error import Conflict
+        if isinstance(context.error, Conflict):
+            logger.warning("Conflict error: Another bot instance is polling. Waiting for single instance...")
+        else:
+            logger.error(f"Error handling update: {context.error}")
+
+    app.add_error_handler(handle_error)
+
     logger.info("Bot is polling for updates... Press Ctrl+C to stop.")
     app.run_polling()
 
