@@ -139,6 +139,11 @@ class SheetsService:
         receipt_url: str = "",
     ) -> Dict[str, Any]:
         """Append new transaction to Google Sheets database."""
+        # Retry connection if credentials are available but not in forced test mock mode
+        if self.is_mock_mode and not getattr(self, "force_mock_mode", False):
+            if config.GOOGLE_CREDENTIALS_JSON or os.path.exists(config.GOOGLE_CREDENTIALS_FILE):
+                self._init_connection()
+
         now = get_current_datetime()
         txn_id = f"TXN-{now.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
         

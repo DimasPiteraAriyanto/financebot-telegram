@@ -19,6 +19,7 @@ class TestChartAndBudgetService(unittest.TestCase):
     def setUp(self):
         cache.clear()
         sheets_service.is_mock_mode = True
+        sheets_service.force_mock_mode = True
         sheets_service._mock_data.clear()
 
         # Add sample data
