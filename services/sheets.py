@@ -41,13 +41,26 @@ class SheetsService:
 
     def _init_connection(self):
         """Initialize Google Sheets API client."""
-        cred_file = config.GOOGLE_CREDENTIALS_FILE
+        # 1. Try raw JSON string from environment variable first (ideal for cloud deployment like Railway)
+        if config.GOOGLE_CREDENTIALS_JSON:
+            try:
+                import json
+                info = json.loads(config.GOOGLE_CREDENTIALS_JSON)
+                creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+                self.client = gspread.authorize(creds)
+                logger.info("Successfully connected to Google Sheets API via GOOGLE_CREDENTIALS_JSON env var")
+                self._ensure_spreadsheet()
+                return
+            except Exception as e:
+                logger.warning(f"Failed to authorize via GOOGLE_CREDENTIALS_JSON env var: {e}")
 
+        # 2. Try credentials.json file on disk
+        cred_file = config.GOOGLE_CREDENTIALS_FILE
         if os.path.exists(cred_file):
             try:
                 creds = Credentials.from_service_account_file(cred_file, scopes=SCOPES)
                 self.client = gspread.authorize(creds)
-                logger.info("Successfully connected to Google Sheets API via credentials.json")
+                logger.info("Successfully connected to Google Sheets API via credentials.json file")
                 self._ensure_spreadsheet()
                 return
             except Exception as e:

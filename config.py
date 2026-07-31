@@ -19,6 +19,7 @@ ALLOWED_USER_IDS = [
 GOOGLE_CREDENTIALS_FILE = os.getenv(
     "GOOGLE_CREDENTIALS_FILE", str(BASE_DIR / "credentials.json")
 )
+GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON", "")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "")
 SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "FinanceBot_Database")
 
