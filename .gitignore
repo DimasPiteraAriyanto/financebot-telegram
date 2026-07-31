@@ -1,0 +1,29 @@
+# Environment variables & secrets
+.env
+credentials.json
+*.json
+!package.json
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
