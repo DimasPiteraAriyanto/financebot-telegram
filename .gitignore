@@ -3,6 +3,7 @@
 credentials.json
 *.json
 !package.json
+!railway.json
 *.pem
 
 # Python
