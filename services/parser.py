@@ -102,10 +102,60 @@ def detect_category(note: str, txn_type: str = "expense") -> tuple[str, str]:
 
 
 def parse_transaction_input(text: str) -> ParsedTransaction | None:
-    """Parse text input into ParsedTransaction dataclass with category shortcuts and ep/dp tab support."""
+    """Parse text input into ParsedTransaction dataclass.
+    Supports natural format: 'dp 25k fore jajan', 'ep 50k pertamax b', '25k kopi jajan'
+    as well as standard '-25k kopi jajan' and '+5jt gaji'.
+    """
     raw_text = text.strip()
     if not raw_text:
         return None
+
+    # Case 0: Natural Format '[sheet_type] [amount] [note...] [category/shortcut]'
+    # Examples: 'dp 25k fore jajan', 'ep 50k pertamax b', '25k fore jajan', 'dp 25k fore'
+    tokens = raw_text.split()
+    if len(tokens) >= 2 and not raw_text.startswith("-") and not raw_text.startswith("+"):
+        tab_type = "dp"
+        start_idx = 0
+        first_token = tokens[0].lower().strip(":")
+
+        if first_token in ["dp", "ep"]:
+            tab_type = first_token
+            start_idx = 1
+
+        if len(tokens) > start_idx:
+            parsed_amt = parse_amount(tokens[start_idx])
+            if parsed_amt is not None and validate_amount(parsed_amt):
+                note_words = tokens[start_idx + 1:]
+                explicit_cat = None
+
+                if note_words:
+                    last_word = note_words[-1].lower().strip(":")
+                    if last_word in CATEGORY_SHORTCUTS:
+                        explicit_cat = CATEGORY_SHORTCUTS[last_word]
+                        note_words = note_words[:-1]
+                    else:
+                        for cat in CATEGORIES:
+                            if cat["name"].lower() == last_word:
+                                explicit_cat = cat["name"]
+                                note_words = note_words[:-1]
+                                break
+
+                note_clean = " ".join(note_words).strip() if note_words else "Pengeluaran"
+                if not explicit_cat:
+                    cat_name, cat_emoji = detect_category(note_clean, "expense")
+                else:
+                    info = get_category_info(explicit_cat)
+                    cat_name, cat_emoji = info["name"], info["emoji"]
+
+                return ParsedTransaction(
+                    type="expense",
+                    amount=parsed_amt,
+                    note=note_clean,
+                    category=cat_name,
+                    category_emoji=cat_emoji,
+                    tab_type=tab_type,
+                    is_smart_detected=False,
+                )
 
     # Case 1 & 2: Explicit prefix '+' or '-'
     if raw_text.startswith("-") or raw_text.startswith("+"):

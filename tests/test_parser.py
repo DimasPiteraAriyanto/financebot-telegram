@@ -79,6 +79,25 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertEqual(res3.note, "maksi roket")
         self.assertEqual(res3.tab_type, "ep")
 
+    def test_natural_expense_format(self):
+        # Format: 'dp 25k fore jajan'
+        res1 = parse_transaction_input("dp 25k fore jajan")
+        self.assertIsNotNone(res1)
+        self.assertEqual(res1.type, "expense")
+        self.assertEqual(res1.amount, 25000)
+        self.assertEqual(res1.note, "fore")
+        self.assertEqual(res1.category, "Jajan")
+        self.assertEqual(res1.tab_type, "dp")
+
+        # Format: 'ep 50k pertamax b'
+        res2 = parse_transaction_input("ep 50k pertamax b")
+        self.assertIsNotNone(res2)
+        self.assertEqual(res2.type, "expense")
+        self.assertEqual(res2.amount, 50000)
+        self.assertEqual(res2.note, "pertamax")
+        self.assertEqual(res2.category, "Bensin")
+        self.assertEqual(res2.tab_type, "ep")
+
 
 if __name__ == "__main__":
     unittest.main()
