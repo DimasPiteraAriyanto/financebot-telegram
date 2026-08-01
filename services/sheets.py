@@ -174,7 +174,7 @@ class SheetsService:
                 
                 # Check if worksheet is custom layout (has 'Tanggal' or 'Pengeluaran' in headers)
                 all_rows = ws.get_all_values()
-                if len(all_rows) >= 4 and any("tanggal" in c.lower() for c in all_rows[3]):
+                if len(all_rows) >= 4 and any("tanggal" in (c or "").lower() for c in all_rows[3]):
                     # Custom Note Pengeluaran 2026 layout
                     target_row = 6
                     while target_row <= len(all_rows):
@@ -243,7 +243,7 @@ class SheetsService:
                 now = get_current_datetime()
                 ws = self._get_target_worksheet(now, tab_suffix="dp")
                 all_rows = ws.get_all_values()
-                if len(all_rows) >= 4 and any("tanggal" in c.lower() for c in all_rows[3]):
+                if len(all_rows) >= 4 and any("tanggal" in (c or "").lower() for c in all_rows[3]):
                     # Find last non-empty row before summary
                     last_row = 5
                     for r_idx in range(6, len(all_rows) + 1):
@@ -291,7 +291,7 @@ class SheetsService:
                 calc_balance = 0.0
                 for ws in worksheets:
                     all_rows = ws.get_all_values()
-                    if len(all_rows) >= 6 and any("tanggal" in c.lower() for c in all_rows[3]):
+                    if len(all_rows) >= 6 and any("tanggal" in (c or "").lower() for c in all_rows[3]):
                         for r_idx in range(6, len(all_rows) + 1):
                             r = all_rows[r_idx - 1]
                             if len(r) > 1 and "TOTAL" in r[1].upper():
