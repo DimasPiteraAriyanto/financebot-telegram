@@ -889,4 +889,36 @@ Bot dianggap MVP jika:
 
 ---
 
-# End of PRD v2.0
+# 16. Revision & System Updates Log (August 2026)
+
+### 16.1 Custom Google Spreadsheet Integration (`Note Pengeluaran 2026`)
+- **Spreadsheet Target**: `Note Pengeluaran 2026` (`1mKESxM0hQc2oCUcWbqWiMssxeWz8ya0Fk5tQGbfVC90`).
+- **Dynamic Monthly Worksheets**: Automatically routes transactions to active month tabs (e.g. `Agustus dp`, `Agustus ep`, `September dp`, `September ep`).
+- **Exact Column Mapping (Cols B:H)**:
+  - `Col B`: Date (`DD MM YYYY`)
+  - `Col C`: Income Category (`Gaji`, `Pemasukan`)
+  - `Col D`: Expense Category (`Jajan`, `Kebutuhan`, `Bensin`, `Belanja`, `Rumah`, `Amal`, `Trading`, `Bibit`, `Saham`, `Lain`)
+  - `Col E`: Income Amount (`Rp XX.XXX`)
+  - `Col F`: Expense Amount (`Rp XX.XXX`)
+  - `Col G`: Native Checkbox Status (`USER_ENTERED` Boolean `True`/`False`)
+  - `Col H`: Transaction Note / Description
+
+### 16.2 Natural Expense Format & Category Shortcuts
+- **Natural Input Format**:
+  - `dp 25k fore jajan` ➔ Target Sheet: `Agustus dp`, Amount: `25.000`, Note: `fore`, Category: `Jajan`
+  - `ep 50k pertamax b` ➔ Target Sheet: `Agustus ep`, Amount: `50.000`, Note: `pertamax`, Category: `Bensin`
+- **Shortcode Mappings**:
+  - `j` ➔ `Jajan`, `b` ➔ `Bensin`, `k` ➔ `Kebutuhan`, `bl` ➔ `Belanja`, `r` ➔ `Rumah`, `a` ➔ `Amal`, `t` ➔ `Trading`, `bb` ➔ `Bibit`, `s` ➔ `Saham`, `l` ➔ `Lain`, `g` ➔ `Gaji`.
+
+### 16.3 Clickable UI Elements
+- **Persistent Reply Keyboard**: Persistent menu bar with clickable category buttons via `/start` and `/kategori`.
+- **Inline Category Grid**: Interactive category choice buttons for smart detection confirmation.
+
+### 16.4 Execution Model
+- **Deployment Mode**: Full Local Execution via Desktop launcher `Start_FinanceBot.bat`.
+- **Offline Message Queueing**: Telegram automatically queues unread messages when the PC is off; processed instantly upon bot startup.
+
+---
+
+# End of PRD v2.0 (Updated 01 Agustus 2026)
+
