@@ -1,110 +1,134 @@
-"""Category definitions, emojis, types, and keyword mappings for automatic detection."""
+"""Category definitions, emojis, types, and keyword mappings for custom Note Pengeluaran 2026 spreadsheet."""
+
+from typing import Any, Dict
 
 CATEGORIES = [
     # EXPENSES
     {
-        "name": "Food",
-        "emoji": "🍜",
+        "name": "Jajan",
+        "emoji": "🍧",
         "type": "expense",
         "keywords": [
-            "makan", "makanan", "bakso", "nasi", "kopi", "minum", "minuman",
-            "restoran", "warteg", "gofood", "grabfood", "shopeefood", "snack",
-            "sarapan", "siang", "malam", "cafe", "kafe", "roti", "susu", "boba", "ayam"
+            "jajan", "kopi", "ngopi", "makan", "minum", "snack", "boba", "bakso",
+            "mixue", "bahari", "couvee", "fore", "roket", "es", "teh", "cafe", "kafe"
         ],
     },
     {
-        "name": "Transport",
-        "emoji": "🚗",
-        "type": "expense",
-        "keywords": [
-            "gojek", "grab", "goride", "gocar", "bensin", "parkir", "tol",
-            "bus", "kereta", "ojek", "mrt", "lrt", "taksi", "taxi", "pertalite", "pertamax"
-        ],
-    },
-    {
-        "name": "Shopping",
+        "name": "Kebutuhan",
         "emoji": "🛒",
         "type": "expense",
         "keywords": [
-            "beli", "belanja", "shopee", "tokped", "tokopedia", "lazada",
-            "baju", "celana", "sepatu", "skincare", "supermarket", "indomaret", "alfa", "alfamart"
+            "kebutuhan", "maksi", "makan siang", "makan malam", "kwetiaw",
+            "sembako", "beras", "sabun", "shampoo", "minyak", "tisu", "popok"
         ],
     },
     {
-        "name": "Bills",
-        "emoji": "📱",
+        "name": "Bensin",
+        "emoji": "⛽",
         "type": "expense",
         "keywords": [
-            "listrik", "air", "pdam", "internet", "pulsa", "wifi", "indihome",
-            "biznet", "pln", "kuota", "langganan", "sewa", "kos", "kontrakan"
+            "bensin", "pertamax", "pertalite", "bbm", "motor", "mobil", "shell"
         ],
     },
     {
-        "name": "Entertainment",
-        "emoji": "🎮",
+        "name": "Belanja",
+        "emoji": "🛍️",
         "type": "expense",
         "keywords": [
-            "nonton", "bioskop", "cinema", "game", "spotify", "netflix", "youtube",
-            "hiburan", "liburan", "tiket", "jalan"
+            "belanja", "beli", "shopee", "tokped", "tokopedia", "lazada",
+            "baju", "celana", "sepatu", "skincare", "kaos", "tas"
         ],
     },
     {
-        "name": "Health",
-        "emoji": "💊",
+        "name": "Rumah",
+        "emoji": "🏠",
         "type": "expense",
         "keywords": [
-            "obat", "dokter", "rumah sakit", "apotek", "vitamin", "klinik", "sehat"
+            "rumah", "kos", "kontrakan", "listrik", "wifi", "air", "pdam", "pln", "indihome", "biznet"
         ],
     },
     {
-        "name": "Education",
-        "emoji": "📚",
+        "name": "Amal",
+        "emoji": "🤲",
         "type": "expense",
         "keywords": [
-            "buku", "kursus", "kuliah", "les", "sekolah", "spp", "udemy", "seminar"
+            "amal", "sedekah", "infaq", "zakat", "donasi", "masjid", "anak yatim"
         ],
     },
     {
-        "name": "Other Expense",
+        "name": "Trading",
+        "emoji": "📈",
+        "type": "expense",
+        "keywords": [
+            "trading", "crypto", "forex", "binance", "tokocrypto"
+        ],
+    },
+    {
+        "name": "Bibit",
+        "emoji": "🟢",
+        "type": "expense",
+        "keywords": [
+            "bibit", "reksadana", "pasar uang"
+        ],
+    },
+    {
+        "name": "Saham",
+        "emoji": "📊",
+        "type": "expense",
+        "keywords": [
+            "saham", "stock", "idx", "ajaib", "stockbit"
+        ],
+    },
+    {
+        "name": "Lain",
         "emoji": "📦",
         "type": "expense",
-        "keywords": ["lainnya", "pengeluaran"],
+        "keywords": [
+            "lain", "potong", "recoil", "biaya", "admin", "parkir", "tol", "servis"
+        ],
     },
-    # INCOME
+    # INCOMES
     {
-        "name": "Salary",
-        "emoji": "💼",
+        "name": "Gaji",
+        "emoji": "💵",
         "type": "income",
-        "keywords": ["gaji", "salary", "upah", "thr"],
+        "keywords": [
+            "gaji", "paycheck", "payroll", "gajian"
+        ],
     },
     {
-        "name": "Freelance",
-        "emoji": "💻",
-        "type": "income",
-        "keywords": ["freelance", "project", "klien", "sidegig", "projectan"],
-    },
-    {
-        "name": "Transfer",
-        "emoji": "💸",
-        "type": "income",
-        "keywords": ["transfer", "kiriman", "tf", "dapat"],
-    },
-    {
-        "name": "Other Income",
+        "name": "Pemasukan",
         "emoji": "💰",
         "type": "income",
-        "keywords": ["bonus", "hadiah", "cashback", "pemasukan", "untung", "bunga"],
+        "keywords": [
+            "pemasukan", "income", "transfer", "bonus", "thr", "freelance", "dapat", "terima", "dikasih"
+        ],
     },
 ]
 
-# Quick mappings for performance
-DEFAULT_EXPENSE_CATEGORY = "Other Expense"
-DEFAULT_INCOME_CATEGORY = "Other Income"
+CATEGORY_BY_NAME = {c["name"]: c for c in CATEGORIES}
+DEFAULT_EXPENSE_CATEGORY = "Jajan"
+DEFAULT_INCOME_CATEGORY = "Pemasukan"
 
 
-def get_category_info(category_name: str) -> dict:
-    """Get category dict by name."""
+def get_category_info(category_name_or_keyword: str) -> Dict[str, Any]:
+    """Find category info by exact name or keyword match."""
+    key = category_name_or_keyword.lower().strip()
+
+    # Try exact name match first
     for cat in CATEGORIES:
-        if cat["name"].lower() == category_name.lower():
+        if cat["name"].lower() == key:
             return cat
-    return {"name": category_name, "emoji": "📝", "type": "expense", "keywords": []}
+
+    # Try keyword match
+    for cat in CATEGORIES:
+        for kw in cat["keywords"]:
+            if kw.lower() in key or key in kw.lower():
+                return cat
+
+    return {
+        "name": DEFAULT_EXPENSE_CATEGORY,
+        "emoji": "🍧",
+        "type": "expense",
+        "keywords": [],
+    }

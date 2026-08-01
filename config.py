@@ -21,7 +21,7 @@ GOOGLE_CREDENTIALS_FILE = os.getenv(
 ).strip().strip("'\"")
 GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON", "").strip().strip("'\"")
 SPREADSHEET_ID = os.getenv(
-    "SPREADSHEET_ID", "1nZK68DMZj6Vt0sbQ_gzchDL6L4O0Tt1cS6OUdtAihz4"
+    "SPREADSHEET_ID", "1mKESxM0hQc2oCUcWbqWiMssxeWz8ya0Fk5tQGbfVC90"
 ).strip().strip("'\"")
 SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME", "FinanceBot_Database").strip().strip("'\"")
 

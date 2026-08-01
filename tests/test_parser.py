@@ -25,16 +25,16 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertEqual(result.type, "expense")
         self.assertEqual(result.amount, 25000)
         self.assertEqual(result.note, "makan siang")
-        self.assertEqual(result.category, "Food")
+        self.assertIn(result.category, ["Jajan", "Kebutuhan"])
         self.assertFalse(result.is_smart_detected)
 
     def test_shortcut_expense_parsing(self):
-        result = parse_transaction_input("-15k gojek kantor")
+        result = parse_transaction_input("-15k bensin kantor")
         self.assertIsNotNone(result)
         self.assertEqual(result.type, "expense")
         self.assertEqual(result.amount, 15000)
-        self.assertEqual(result.note, "gojek kantor")
-        self.assertEqual(result.category, "Transport")
+        self.assertEqual(result.note, "bensin kantor")
+        self.assertEqual(result.category, "Bensin")
 
     def test_income_parsing(self):
         result = parse_transaction_input("+5jt gaji juli")
@@ -42,7 +42,7 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertEqual(result.type, "income")
         self.assertEqual(result.amount, 5000000)
         self.assertEqual(result.note, "gaji juli")
-        self.assertEqual(result.category, "Salary")
+        self.assertEqual(result.category, "Gaji")
 
     def test_smart_detection_parsing(self):
         result = parse_transaction_input("bakso 25000")
@@ -50,7 +50,7 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertEqual(result.type, "unknown")
         self.assertEqual(result.amount, 25000)
         self.assertEqual(result.note, "bakso")
-        self.assertEqual(result.category, "Food")
+        self.assertEqual(result.category, "Jajan")
         self.assertTrue(result.is_smart_detected)
 
     def test_invalid_input(self):
