@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
+from constants.categories import get_category_info
 from constants.messages import (
     INVALID_FORMAT_MESSAGE,
     SMART_DETECT_PROMPT,
@@ -14,6 +15,20 @@ from services.sheets import sheets_service
 from utils.formatter import format_currency
 from utils.logger import logger
 from utils.validator import is_user_allowed
+
+CATEGORY_BUTTON_MAP = {
+    "🍨 Jajan": ("Jajan", "🍨", "j"),
+    "⛽ Bensin": ("Bensin", "⛽", "b"),
+    "🛒 Kebutuhan": ("Kebutuhan", "🛒", "k"),
+    "🛍️ Belanja": ("Belanja", "🛍️", "bl"),
+    "🏠 Rumah": ("Rumah", "🏠", "r"),
+    "🤲 Amal": ("Amal", "🤲", "a"),
+    "📈 Trading": ("Trading", "📈", "t"),
+    "🌱 Bibit": ("Bibit", "🌱", "bb"),
+    "📊 Saham": ("Saham", "📊", "s"),
+    "📝 Lain": ("Lain", "📝", "l"),
+    "💰 Gaji": ("Gaji", "💰", "g"),
+}
 
 
 async def text_transaction_handler(
@@ -32,6 +47,19 @@ async def text_transaction_handler(
     text = update.message.text.strip()
     if text.startswith("/"):
         return  # Ignore command messages
+
+    # Handle direct category button tap
+    if text in CATEGORY_BUTTON_MAP:
+        cat_name, emoji, code = CATEGORY_BUTTON_MAP[text]
+        prompt = (
+            f"{emoji} *Kategori Terpilih: {cat_name}*\n\n"
+            f"Ketik nominal & catatan Anda. Contoh:\n"
+            f"• `-25k kopi fore` ➔ Masuk {cat_name} di sheet *dp*\n"
+            f"• `-25k kopi fore ep` ➔ Masuk {cat_name} di sheet *ep*\n\n"
+            f"💡 *Atau gunakan shortcut cepat*: `-{code}: 25k kopi fore`"
+        )
+        await update.message.reply_text(prompt, parse_mode="Markdown")
+        return
 
     parsed = parse_transaction_input(text)
     if not parsed:
@@ -59,6 +87,21 @@ async def text_transaction_handler(
                     "➕ Pemasukan",
                     callback_data=f"conf|income|{parsed.amount}|{note_short}",
                 ),
+            ],
+            [
+                InlineKeyboardButton("🍨 Jajan", callback_data=f"cat|Jajan|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("⛽ Bensin", callback_data=f"cat|Bensin|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("🛒 Kebutuhan", callback_data=f"cat|Kebutuhan|{parsed.amount}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("🛍️ Belanja", callback_data=f"cat|Belanja|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("🏠 Rumah", callback_data=f"cat|Rumah|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("🤲 Amal", callback_data=f"cat|Amal|{parsed.amount}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("📈 Trading", callback_data=f"cat|Trading|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("🌱 Bibit", callback_data=f"cat|Bibit|{parsed.amount}|{note_short}"),
+                InlineKeyboardButton("💰 Gaji", callback_data=f"cat|Gaji|{parsed.amount}|{note_short}"),
             ],
             [InlineKeyboardButton("❌ Batal", callback_data="conf|cancel|0|none")],
         ]
@@ -113,31 +156,49 @@ async def callback_confirmation_handler(
     data = query.data or ""
     parts = data.split("|")
 
-    if len(parts) < 4 or parts[0] != "conf":
+    if len(parts) < 4:
         return
 
-    action = parts[1]
-    if action == "cancel":
-        await query.edit_message_text("❌ Transaksi dibatalkan.")
+    prefix = parts[0]
+    if prefix not in ["conf", "cat"]:
         return
 
-    try:
-        amount = float(parts[2])
-        note = parts[3]
-    except ValueError:
-        await query.edit_message_text("❌ Error memproses data transaksi.")
-        return
+    if prefix == "conf":
+        action = parts[1]
+        if action == "cancel":
+            await query.edit_message_text("❌ Transaksi dibatalkan.")
+            return
 
-    cat_name, cat_emoji = detect_category(note, action)
+        try:
+            amount = float(parts[2])
+            note = parts[3]
+        except ValueError:
+            await query.edit_message_text("❌ Error memproses data transaksi.")
+            return
+
+        cat_name, cat_emoji = detect_category(note, action)
+        txn_type = action
+    elif prefix == "cat":
+        cat_name = parts[1]
+        try:
+            amount = float(parts[2])
+            note = parts[3]
+        except ValueError:
+            await query.edit_message_text("❌ Error memproses data transaksi.")
+            return
+
+        info = get_category_info(cat_name)
+        cat_emoji = info["emoji"]
+        txn_type = info["type"]
 
     # Check budget warning
     budget_warning = None
-    if action == "expense":
+    if txn_type == "expense":
         budget_warning = check_budget_warning(cat_name, amount)
 
     # Save transaction
     record = sheets_service.append_transaction(
-        txn_type=action,
+        txn_type=txn_type,
         category=cat_name,
         amount=amount,
         note=note,

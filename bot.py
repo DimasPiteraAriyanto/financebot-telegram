@@ -22,7 +22,7 @@ from handlers.report import (
     week_handler,
 )
 from handlers.settings import settings_handler
-from handlers.start import help_handler, start_handler
+from handlers.start import help_handler, kategori_handler, start_handler
 from handlers.transaction import (
     callback_confirmation_handler,
     text_transaction_handler,
@@ -54,6 +54,8 @@ def main():
     # Register Basic & Help Handlers
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("help", help_handler))
+    app.add_handler(CommandHandler("kategori", kategori_handler))
+    app.add_handler(CommandHandler("menu", kategori_handler))
     app.add_handler(CommandHandler("settings", settings_handler))
 
     # Register Report Handlers (Phase 2)
