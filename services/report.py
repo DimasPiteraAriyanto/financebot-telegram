@@ -9,11 +9,28 @@ from utils.formatter import get_current_datetime
 
 
 def _parse_date(date_str: str) -> Optional[date]:
-    """Safely parse YYYY-MM-DD string to date object."""
-    try:
-        return datetime.strptime(str(date_str).strip(), "%Y-%m-%d").date()
-    except (ValueError, TypeError):
+    """Safely parse various date string formats into a date object."""
+    if not date_str:
         return None
+
+    raw = str(date_str).strip()
+    now = get_current_datetime()
+
+    for fmt in ("%Y-%m-%d", "%d %m %Y", "%d.%m.%Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except (ValueError, TypeError):
+            pass
+
+    if raw.isdigit():
+        day_num = int(raw)
+        if 1 <= day_num <= 31:
+            try:
+                return date(now.year, now.month, day_num)
+            except ValueError:
+                pass
+
+    return None
 
 
 
