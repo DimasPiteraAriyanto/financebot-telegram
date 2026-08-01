@@ -17,7 +17,69 @@ class ParsedTransaction:
     note: str
     category: str
     category_emoji: str
+    tab_type: str = "dp"  # "dp" or "ep"
     is_smart_detected: bool = False
+
+
+CATEGORY_SHORTCUTS = {
+    "j": "Jajan", "jj": "Jajan", "jajn": "Jajan", "jajan": "Jajan",
+    "b": "Bensin", "bs": "Bensin", "bsn": "Bensin", "bensin": "Bensin",
+    "k": "Kebutuhan", "kb": "Kebutuhan", "kbt": "Kebutuhan", "kebutuhan": "Kebutuhan",
+    "bl": "Belanja", "bj": "Belanja", "blj": "Belanja", "belanja": "Belanja",
+    "r": "Rumah", "rm": "Rumah", "rmh": "Rumah", "rumah": "Rumah",
+    "a": "Amal", "am": "Amal", "aml": "Amal", "amal": "Amal",
+    "t": "Trading", "tr": "Trading", "trd": "Trading", "trading": "Trading",
+    "bb": "Bibit", "bbt": "Bibit", "bibit": "Bibit",
+    "s": "Saham", "sh": "Saham", "shm": "Saham", "saham": "Saham",
+    "l": "Lain", "ln": "Lain", "lain": "Lain",
+    "g": "Gaji", "gj": "Gaji", "gaji": "Gaji",
+    "p": "Pemasukan", "pem": "Pemasukan", "pemasukan": "Pemasukan",
+}
+
+
+def parse_tab_and_category(note: str, txn_type: str = "expense") -> tuple[str, str, str, str]:
+    """Parse tab_type ('dp'/'ep'), category_name, category_emoji, and cleaned note from input."""
+    clean_note = note.strip()
+    tab_type = "dp"
+
+    # Check for 'ep' or 'dp' tab flag in note
+    words = clean_note.split()
+    filtered_words = []
+    for w in words:
+        w_lower = w.lower().strip(":")
+        if w_lower in ["ep", "tab_ep", "tab-ep"]:
+            tab_type = "ep"
+        elif w_lower in ["dp", "tab_dp", "tab-dp"]:
+            tab_type = "dp"
+        else:
+            filtered_words.append(w)
+
+    clean_note = " ".join(filtered_words).strip()
+    explicit_category = None
+
+    # Check for category shortcut prefix (e.g. 'j: kopi fore' or 'j kopi fore')
+    if ":" in clean_note:
+        prefix, rest = clean_note.split(":", 1)
+        prefix_key = prefix.strip().lower()
+        if prefix_key in CATEGORY_SHORTCUTS:
+            explicit_category = CATEGORY_SHORTCUTS[prefix_key]
+            clean_note = rest.strip()
+
+    if not explicit_category and clean_note:
+        first_word = clean_note.split()[0].lower()
+        if first_word in CATEGORY_SHORTCUTS:
+            explicit_category = CATEGORY_SHORTCUTS[first_word]
+            rest_words = clean_note.split()[1:]
+            if rest_words:
+                clean_note = " ".join(rest_words)
+
+    if explicit_category:
+        info = get_category_info(explicit_category)
+        return tab_type, info["name"], info["emoji"], clean_note if clean_note else explicit_category
+
+    # Fallback to keyword autodetect
+    cat_name, cat_emoji = detect_category(clean_note, txn_type)
+    return tab_type, cat_name, cat_emoji, clean_note if clean_note else "Transaksi"
 
 
 def detect_category(note: str, txn_type: str = "expense") -> tuple[str, str]:
@@ -26,15 +88,12 @@ def detect_category(note: str, txn_type: str = "expense") -> tuple[str, str]:
 
     # Match exact keywords first
     for cat in CATEGORIES:
-        # Filter by type matching if known
         if txn_type != "unknown" and cat["type"] != txn_type:
             continue
         for keyword in cat["keywords"]:
-            # Check full word or sub-word match
             if re.search(rf"\b{re.escape(keyword)}\b", clean_note) or keyword in clean_note:
                 return cat["name"], cat["emoji"]
 
-    # Fallback default category
     default_cat_name = (
         DEFAULT_INCOME_CATEGORY if txn_type == "income" else DEFAULT_EXPENSE_CATEGORY
     )
@@ -43,13 +102,7 @@ def detect_category(note: str, txn_type: str = "expense") -> tuple[str, str]:
 
 
 def parse_transaction_input(text: str) -> ParsedTransaction | None:
-    """Parse text input into ParsedTransaction dataclass.
-    Supports:
-      1. '-25000 makan siang' or '-25k makan' (Expense)
-      2. '+5000000 gaji juli' or '+5jt gaji' (Income)
-      3. 'bakso 25000' or '25000 bakso' (Smart Detection)
-    Returns ParsedTransaction or None if unrecognized.
-    """
+    """Parse text input into ParsedTransaction dataclass with category shortcuts and ep/dp tab support."""
     raw_text = text.strip()
     if not raw_text:
         return None
@@ -60,7 +113,6 @@ def parse_transaction_input(text: str) -> ParsedTransaction | None:
         txn_type = "expense" if prefix == "-" else "income"
         body = raw_text[1:].strip()
 
-        # Split amount token from note token
         tokens = body.split(maxsplit=1)
         if not tokens:
             return None
@@ -68,10 +120,8 @@ def parse_transaction_input(text: str) -> ParsedTransaction | None:
         amount_str = tokens[0]
         note_str = tokens[1] if len(tokens) > 1 else ""
 
-        # Check if first token is numeric/amount shortcut
         parsed_amt = parse_amount(amount_str)
         if parsed_amt is None or not validate_amount(parsed_amt):
-            # Check if last token is numeric (e.g. '-makan 25000')
             tokens = body.rsplit(maxsplit=1)
             if len(tokens) == 2:
                 parsed_amt = parse_amount(tokens[1])
@@ -80,8 +130,8 @@ def parse_transaction_input(text: str) -> ParsedTransaction | None:
         if parsed_amt is None or not validate_amount(parsed_amt):
             return None
 
-        note_clean = sanitize_note(note_str) if note_str else ("Pengeluaran" if txn_type == "expense" else "Pemasukan")
-        cat_name, cat_emoji = detect_category(note_clean, txn_type)
+        note_raw = sanitize_note(note_str) if note_str else ("Pengeluaran" if txn_type == "expense" else "Pemasukan")
+        tab_type, cat_name, cat_emoji, note_clean = parse_tab_and_category(note_raw, txn_type)
 
         return ParsedTransaction(
             type=txn_type,
@@ -89,12 +139,11 @@ def parse_transaction_input(text: str) -> ParsedTransaction | None:
             note=note_clean,
             category=cat_name,
             category_emoji=cat_emoji,
+            tab_type=tab_type,
             is_smart_detected=False,
         )
 
     # Case 3: Smart Detection (no prefix)
-    # Looking for a number/shortcut token in string
-    # Matches patterns like: 'bakso 25000', '25k kopi', 'nasi goreng 20.000'
     tokens = raw_text.split()
     amount_found = None
     note_tokens = []
@@ -108,15 +157,16 @@ def parse_transaction_input(text: str) -> ParsedTransaction | None:
 
     if amount_found is not None:
         note_str = " ".join(note_tokens) if note_tokens else "Transaksi"
-        note_clean = sanitize_note(note_str)
-        cat_name, cat_emoji = detect_category(note_clean, "expense")
+        note_raw = sanitize_note(note_str)
+        tab_type, cat_name, cat_emoji, note_clean = parse_tab_and_category(note_raw, "expense")
 
         return ParsedTransaction(
-            type="unknown",  # Requires user confirmation via inline buttons
+            type="unknown",
             amount=amount_found,
             note=note_clean,
             category=cat_name,
             category_emoji=cat_emoji,
+            tab_type=tab_type,
             is_smart_detected=True,
         )
 

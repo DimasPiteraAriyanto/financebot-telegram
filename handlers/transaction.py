@@ -79,6 +79,7 @@ async def text_transaction_handler(
         category=parsed.category,
         amount=parsed.amount,
         note=parsed.note,
+        tab_type=parsed.tab_type,
     )
 
     formatted_amt = format_currency(record["amount"])

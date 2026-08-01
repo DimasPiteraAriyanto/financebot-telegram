@@ -33,7 +33,7 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result.type, "expense")
         self.assertEqual(result.amount, 15000)
-        self.assertEqual(result.note, "bensin kantor")
+        self.assertEqual(result.note, "kantor")
         self.assertEqual(result.category, "Bensin")
 
     def test_income_parsing(self):
@@ -41,7 +41,7 @@ class TestParserAndFormatter(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result.type, "income")
         self.assertEqual(result.amount, 5000000)
-        self.assertEqual(result.note, "gaji juli")
+        self.assertEqual(result.note, "juli")
         self.assertEqual(result.category, "Gaji")
 
     def test_smart_detection_parsing(self):
@@ -56,6 +56,28 @@ class TestParserAndFormatter(unittest.TestCase):
     def test_invalid_input(self):
         self.assertIsNone(parse_transaction_input("hello world"))
         self.assertIsNone(parse_transaction_input(""))
+
+    def test_category_shortcuts_and_tab_parsing(self):
+        # Category shortcut 'j' (Jajan) and default tab 'dp'
+        res1 = parse_transaction_input("-25k j: kopi fore")
+        self.assertIsNotNone(res1)
+        self.assertEqual(res1.category, "Jajan")
+        self.assertEqual(res1.note, "kopi fore")
+        self.assertEqual(res1.tab_type, "dp")
+
+        # Category shortcut 'b' (Bensin) and explicit tab 'ep'
+        res2 = parse_transaction_input("-50k b: pertamax ep")
+        self.assertIsNotNone(res2)
+        self.assertEqual(res2.category, "Bensin")
+        self.assertEqual(res2.note, "pertamax")
+        self.assertEqual(res2.tab_type, "ep")
+
+        # First word category shortcut 'k' (Kebutuhan)
+        res3 = parse_transaction_input("-20k k maksi roket ep")
+        self.assertIsNotNone(res3)
+        self.assertEqual(res3.category, "Kebutuhan")
+        self.assertEqual(res3.note, "maksi roket")
+        self.assertEqual(res3.tab_type, "ep")
 
 
 if __name__ == "__main__":
