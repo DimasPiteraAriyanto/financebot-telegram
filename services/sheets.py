@@ -207,11 +207,11 @@ class SheetsService:
                         pengeluaran_cat,   # Col D
                         pemasukan_amt,     # Col E
                         pengeluaran_amt,   # Col F
-                        "TRUE",            # Col G (Lunas)
+                        True,              # Col G (Checkbox status Lunas)
                         f" {note} "        # Col H (Keterangan)
                     ]
                     
-                    ws.update(f"B{target_row}:H{target_row}", [values])
+                    ws.update(range_name=f"B{target_row}:H{target_row}", values=[values], value_input_option="USER_ENTERED")
                     logger.info(f"[GoogleSheets] Saved custom transaction {txn_id} to {ws.title} Row {target_row}")
                 else:
                     # Standard Transactions sheet format
@@ -262,7 +262,7 @@ class SheetsService:
                             "amount": parse_amount(row_vals[5] or row_vals[4] or "0"),
                             "note": row_vals[7] if len(row_vals) > 7 else "",
                         }
-                        ws.update(f"B{last_row}:H{last_row}", [["", "", "", "", "", "FALSE", ""]])
+                        ws.update(range_name=f"B{last_row}:H{last_row}", values=[["", "", "", "", "", False, ""]], value_input_option="USER_ENTERED")
                 else:
                     records = ws.get_all_records()
                     if records:
