@@ -914,9 +914,14 @@ Bot dianggap MVP jika:
 - **Level 1 (Main Menu Bar)**: Top-level navigation buttons `[ 💸 Catat Pengeluaran ]`, `[ 💰 Catat Pemasukan ]`, `[ 📊 /saldo ]`, `[ 📈 /chart ]`, `[ ℹ️ /help ]`.
 - **Level 2 (Expense Sub-Menu)**: Dedicated sub-menu for Expense categories (`Jajan`, `Bensin`, `Kebutuhan`, `Belanja`, `Rumah`, `Amal`, `Trading`, `Bibit`, `Saham`, `Lain`) with a `[ 🔙 Kembali Ke Menu Utama ]` button.
 - **Level 2 (Income Sub-Menu)**: Dedicated sub-menu for Income categories (`Gaji`, `Pemasukan Lain`, `Profit Trading`) with a `[ 🔙 Kembali Ke Menu Utama ]` button.
-- **Inline Category Grid**: Interactive category choice buttons for smart detection confirmation.
 
-### 16.4 Execution Model
+### 16.4 3-Step Interactive Inline Wizard
+- **Step 1 (Jenis Transaksi)**: `[ ➖ Pengeluaran ]` vs `[ ➕ Pemasukan ]`
+- **Step 2 (Pilihan Sheet Target)**: `[ 📄 Sheet DP ]` vs `[ 📄 Sheet EP ]` + `[ ⬅️ Kembali ke Jenis Transaksi ]`
+- **Step 3 (Pilihan Kategori)**: Grid tombol kategori + `[ ⬅️ Kembali ke Pilihan Sheet ]`
+- **Penyimpanan**: Menyimpan transaksi presisi ke target sheet bulanan (`Agustus dp` / `Agustus ep`) dengan Checkbox Lunas (`TRUE`).
+
+### 16.5 Execution Model
 - **Deployment Mode**: Full Local Execution via Desktop launcher `Start_FinanceBot.bat`.
 - **Offline Message Queueing**: Telegram automatically queues unread messages when the PC is off; processed instantly upon bot startup.
 
