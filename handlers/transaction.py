@@ -9,6 +9,11 @@ from constants.messages import (
     TRANSACTION_SUCCESS_MESSAGE,
     UNAUTHORIZED_MESSAGE,
 )
+from handlers.start import (
+    get_expense_keyboard,
+    get_income_keyboard,
+    get_main_menu_keyboard,
+)
 from services.budget import check_budget_warning
 from services.parser import detect_category, parse_transaction_input
 from services.sheets import sheets_service
@@ -17,24 +22,26 @@ from utils.logger import logger
 from utils.validator import is_user_allowed
 
 CATEGORY_BUTTON_MAP = {
-    "🍨 Jajan": ("Jajan", "🍨", "j"),
-    "⛽ Bensin": ("Bensin", "⛽", "b"),
-    "🛒 Kebutuhan": ("Kebutuhan", "🛒", "k"),
-    "🛍️ Belanja": ("Belanja", "🛍️", "bl"),
-    "🏠 Rumah": ("Rumah", "🏠", "r"),
-    "🤲 Amal": ("Amal", "🤲", "a"),
-    "📈 Trading": ("Trading", "📈", "t"),
-    "🌱 Bibit": ("Bibit", "🌱", "bb"),
-    "📊 Saham": ("Saham", "📊", "s"),
-    "📝 Lain": ("Lain", "📝", "l"),
-    "💰 Gaji": ("Gaji", "💰", "g"),
+    "🍨 Jajan": ("Jajan", "🍨", "j", "expense"),
+    "⛽ Bensin": ("Bensin", "⛽", "b", "expense"),
+    "🛒 Kebutuhan": ("Kebutuhan", "🛒", "k", "expense"),
+    "🛍️ Belanja": ("Belanja", "🛍️", "bl", "expense"),
+    "🏠 Rumah": ("Rumah", "🏠", "r", "expense"),
+    "🤲 Amal": ("Amal", "🤲", "a", "expense"),
+    "📈 Trading": ("Trading", "📈", "t", "expense"),
+    "🌱 Bibit": ("Bibit", "🌱", "bb", "expense"),
+    "📊 Saham": ("Saham", "📊", "s", "expense"),
+    "📝 Lain": ("Lain", "📝", "l", "expense"),
+    "💰 Gaji": ("Gaji", "💰", "g", "income"),
+    "💵 Pemasukan Lain": ("Pemasukan", "💵", "p", "income"),
+    "📈 Profit Trading": ("Trading", "📈", "t", "income"),
 }
 
 
 async def text_transaction_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
-    """Handle text input for adding transactions or smart detection."""
+    """Handle text input for adding transactions, sub-menu navigation, or smart detection."""
     user = update.effective_user
     if not user or not is_user_allowed(user.id):
         if update.message:
@@ -48,19 +55,58 @@ async def text_transaction_handler(
     if text.startswith("/"):
         return  # Ignore command messages
 
-    # Handle direct category button tap
-    if text in CATEGORY_BUTTON_MAP:
-        cat_name, emoji, code = CATEGORY_BUTTON_MAP[text]
-        prompt = (
-            f"{emoji} *Kategori Terpilih: {cat_name}*\n\n"
-            f"Ketik nominal & catatan Anda. Contoh:\n"
-            f"• `-25k kopi fore` ➔ Masuk {cat_name} di sheet *dp*\n"
-            f"• `-25k kopi fore ep` ➔ Masuk {cat_name} di sheet *ep*\n\n"
-            f"💡 *Atau gunakan shortcut cepat*: `-{code}: 25k kopi fore`"
+    # 1. Handle Navigation Menu Taps
+    if text in ["💸 Catat Pengeluaran", "Pengeluaran"]:
+        reply_markup = get_expense_keyboard()
+        await update.message.reply_text(
+            "💸 *Menu Pengeluaran*\n\nPilih kategori pengeluaran Anda di bawah:",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
         )
+        return
+
+    if text in ["💰 Catat Pemasukan", "Pemasukan"]:
+        reply_markup = get_income_keyboard()
+        await update.message.reply_text(
+            "💰 *Menu Pemasukan*\n\nPilih kategori pemasukan Anda di bawah:",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
+        )
+        return
+
+    if text in ["🔙 Kembali Ke Menu Utama", "🔙 Kembali", "Kembali"]:
+        reply_markup = get_main_menu_keyboard()
+        await update.message.reply_text(
+            "🏠 *Kembali ke Menu Utama*\n\nPilih menu yang Anda inginkan di bawah:",
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
+        )
+        return
+
+    # 2. Handle Direct Category Button Tap
+    if text in CATEGORY_BUTTON_MAP:
+        cat_name, emoji, code, txn_type = CATEGORY_BUTTON_MAP[text]
+        if txn_type == "expense":
+            prompt = (
+                f"{emoji} *Kategori Pengeluaran: {cat_name}*\n\n"
+                f"Ketik nominal & catatan Anda. Contoh:\n"
+                f"• `dp 25k fore {cat_name.lower()}` ➔ Masuk sheet *dp*\n"
+                f"• `ep 25k fore {cat_name.lower()}` ➔ Masuk sheet *ep*\n"
+                f"• `-25k fore {cat_name.lower()}` ➔ Masuk sheet *dp*\n\n"
+                f"💡 *Atau shortcut cepat*: `-{code}: 25k fore`"
+            )
+        else:
+            prompt = (
+                f"{emoji} *Kategori Pemasukan: {cat_name}*\n\n"
+                f"Ketik nominal & catatan Anda. Contoh:\n"
+                f"• `+5jt gaji juli` ➔ Masuk sheet *dp*\n"
+                f"• `+500k bonus ep` ➔ Masuk sheet *ep*"
+            )
+
         await update.message.reply_text(prompt, parse_mode="Markdown")
         return
 
+    # 3. Parse input text into transaction
     parsed = parse_transaction_input(text)
     if not parsed:
         await update.message.reply_text(INVALID_FORMAT_MESSAGE, parse_mode="Markdown")
