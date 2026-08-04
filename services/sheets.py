@@ -139,6 +139,7 @@ class SheetsService:
         amount: float,
         note: str,
         receipt_url: str = "",
+        tab_type: str = "dp",
     ) -> Dict[str, Any]:
         """Append new transaction to Google Sheets database."""
         if self.is_mock_mode and not getattr(self, "force_mock_mode", False):
@@ -169,8 +170,8 @@ class SheetsService:
             logger.info(f"[MockSheets] Saved transaction: {row_data}")
         else:
             try:
-                # Target active monthly sheet e.g. 'Agustus dp'
-                ws = self._get_target_worksheet(now, tab_suffix="dp")
+                # Target active monthly sheet e.g. 'Agustus dp' or 'Agustus ep'
+                ws = self._get_target_worksheet(now, tab_suffix=tab_type)
                 
                 # Check if worksheet is custom layout (has 'Tanggal' or 'Pengeluaran' in headers)
                 all_rows = ws.get_all_values()
