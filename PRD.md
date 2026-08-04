@@ -910,8 +910,10 @@ Bot dianggap MVP jika:
 - **Shortcode Mappings**:
   - `j` ➔ `Jajan`, `b` ➔ `Bensin`, `k` ➔ `Kebutuhan`, `bl` ➔ `Belanja`, `r` ➔ `Rumah`, `a` ➔ `Amal`, `t` ➔ `Trading`, `bb` ➔ `Bibit`, `s` ➔ `Saham`, `l` ➔ `Lain`, `g` ➔ `Gaji`.
 
-### 16.3 Clickable UI Elements
-- **Persistent Reply Keyboard**: Persistent menu bar with clickable category buttons via `/start` and `/kategori`.
+### 16.3 Clickable UI Elements & Multi-Tier Menu System
+- **Level 1 (Main Menu Bar)**: Top-level navigation buttons `[ 💸 Catat Pengeluaran ]`, `[ 💰 Catat Pemasukan ]`, `[ 📊 /saldo ]`, `[ 📈 /chart ]`, `[ ℹ️ /help ]`.
+- **Level 2 (Expense Sub-Menu)**: Dedicated sub-menu for Expense categories (`Jajan`, `Bensin`, `Kebutuhan`, `Belanja`, `Rumah`, `Amal`, `Trading`, `Bibit`, `Saham`, `Lain`) with a `[ 🔙 Kembali Ke Menu Utama ]` button.
+- **Level 2 (Income Sub-Menu)**: Dedicated sub-menu for Income categories (`Gaji`, `Pemasukan Lain`, `Profit Trading`) with a `[ 🔙 Kembali Ke Menu Utama ]` button.
 - **Inline Category Grid**: Interactive category choice buttons for smart detection confirmation.
 
 ### 16.4 Execution Model
@@ -920,5 +922,5 @@ Bot dianggap MVP jika:
 
 ---
 
-# End of PRD v2.0 (Updated 01 Agustus 2026)
+# End of PRD v2.0 (Updated 04 Agustus 2026)
 
