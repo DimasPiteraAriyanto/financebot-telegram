@@ -4,7 +4,6 @@ from telegram.ext import ContextTypes
 from constants.categories import get_category_info
 from constants.messages import (
     INVALID_FORMAT_MESSAGE,
-    SMART_DETECT_PROMPT,
     TRANSACTION_DELETED_MESSAGE,
     TRANSACTION_SUCCESS_MESSAGE,
     UNAUTHORIZED_MESSAGE,
@@ -38,6 +37,101 @@ CATEGORY_BUTTON_MAP = {
 }
 
 
+def make_step1_type_keyboard(amount: float, note: str) -> InlineKeyboardMarkup:
+    """Step 1: Choose transaction type (Pengeluaran vs Pemasukan)."""
+    note_short = note[:20].replace("|", " ")
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "➖ Pengeluaran",
+                callback_data=f"wiz|sheet|expense|{amount:.0f}|{note_short}",
+            ),
+            InlineKeyboardButton(
+                "➕ Pemasukan",
+                callback_data=f"wiz|sheet|income|{amount:.0f}|{note_short}",
+            ),
+        ],
+        [InlineKeyboardButton("❌ Batal", callback_data="wiz|cancel|0|0")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def make_step2_sheet_keyboard(txn_type: str, amount: float, note: str) -> InlineKeyboardMarkup:
+    """Step 2: Choose target sheet (DP vs EP)."""
+    note_short = note[:20].replace("|", " ")
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "📄 Sheet DP",
+                callback_data=f"wiz|cat|{txn_type}|dp|{amount:.0f}|{note_short}",
+            ),
+            InlineKeyboardButton(
+                "📄 Sheet EP",
+                callback_data=f"wiz|cat|{txn_type}|ep|{amount:.0f}|{note_short}",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "⬅️ Kembali ke Jenis Transaksi",
+                callback_data=f"wiz|type|{amount:.0f}|{note_short}",
+            )
+        ],
+        [InlineKeyboardButton("❌ Batal", callback_data="wiz|cancel|0|0")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def make_step3_category_keyboard(
+    txn_type: str, tab_type: str, amount: float, note: str
+) -> InlineKeyboardMarkup:
+    """Step 3: Choose category name."""
+    note_short = note[:20].replace("|", " ")
+    amt_str = f"{amount:.0f}"
+
+    if txn_type == "expense":
+        keyboard = [
+            [
+                InlineKeyboardButton("🍨 Jajan", callback_data=f"wiz|save|expense|{tab_type}|Jajan|{amt_str}|{note_short}"),
+                InlineKeyboardButton("⛽ Bensin", callback_data=f"wiz|save|expense|{tab_type}|Bensin|{amt_str}|{note_short}"),
+                InlineKeyboardButton("🛒 Kebutuhan", callback_data=f"wiz|save|expense|{tab_type}|Kebutuhan|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("🛍️ Belanja", callback_data=f"wiz|save|expense|{tab_type}|Belanja|{amt_str}|{note_short}"),
+                InlineKeyboardButton("🏠 Rumah", callback_data=f"wiz|save|expense|{tab_type}|Rumah|{amt_str}|{note_short}"),
+                InlineKeyboardButton("🤲 Amal", callback_data=f"wiz|save|expense|{tab_type}|Amal|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("📈 Trading", callback_data=f"wiz|save|expense|{tab_type}|Trading|{amt_str}|{note_short}"),
+                InlineKeyboardButton("🌱 Bibit", callback_data=f"wiz|save|expense|{tab_type}|Bibit|{amt_str}|{note_short}"),
+                InlineKeyboardButton("📊 Saham", callback_data=f"wiz|save|expense|{tab_type}|Saham|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("📝 Lain", callback_data=f"wiz|save|expense|{tab_type}|Lain|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Kembali ke Pilihan Sheet", callback_data=f"wiz|sheet|expense|{amt_str}|{note_short}"),
+            ],
+            [InlineKeyboardButton("❌ Batal", callback_data="wiz|cancel|0|0")],
+        ]
+    else:
+        keyboard = [
+            [
+                InlineKeyboardButton("💰 Gaji", callback_data=f"wiz|save|income|{tab_type}|Gaji|{amt_str}|{note_short}"),
+                InlineKeyboardButton("💵 Pemasukan", callback_data=f"wiz|save|income|{tab_type}|Pemasukan|{amt_str}|{note_short}"),
+                InlineKeyboardButton("📈 Trading", callback_data=f"wiz|save|income|{tab_type}|Trading|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("📝 Lain", callback_data=f"wiz|save|income|{tab_type}|Lain|{amt_str}|{note_short}"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Kembali ke Pilihan Sheet", callback_data=f"wiz|sheet|income|{amt_str}|{note_short}"),
+            ],
+            [InlineKeyboardButton("❌ Batal", callback_data="wiz|cancel|0|0")],
+        ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 async def text_transaction_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
@@ -53,7 +147,7 @@ async def text_transaction_handler(
 
     text = update.message.text.strip()
     if text.startswith("/"):
-        return  # Ignore command messages
+        return
 
     # 1. Handle Navigation Menu Taps
     if text in ["💸 Catat Pengeluaran", "Pengeluaran"]:
@@ -92,7 +186,7 @@ async def text_transaction_handler(
                 f"Ketik nominal & catatan Anda. Contoh:\n"
                 f"• `dp 25k fore {cat_name.lower()}` ➔ Masuk sheet *dp*\n"
                 f"• `ep 25k fore {cat_name.lower()}` ➔ Masuk sheet *ep*\n"
-                f"• `-25k fore {cat_name.lower()}` ➔ Masuk sheet *dp*\n\n"
+                f"• `25k fore {cat_name.lower()}` ➔ Masuk sheet *dp*\n\n"
                 f"💡 *Atau shortcut cepat*: `-{code}: 25k fore`"
             )
         else:
@@ -112,57 +206,27 @@ async def text_transaction_handler(
         await update.message.reply_text(INVALID_FORMAT_MESSAGE, parse_mode="Markdown")
         return
 
-    # Handle Smart Detection (requires user confirmation via Inline Keyboard)
+    # 4. Handle Smart Detection / Wizard Launch (3-Step Interactive Wizard)
     if parsed.is_smart_detected:
         formatted_amt = format_currency(parsed.amount)
-        prompt_text = SMART_DETECT_PROMPT.format(
-            note=parsed.note,
-            amount_formatted=formatted_amt,
-            emoji=parsed.category_emoji,
-            category=parsed.category,
+        prompt_text = (
+            f"🔍 *Pencatatan Transaksi Barus*\n\n"
+            f"💰 Nominal: *{formatted_amt}*\n"
+            f"📝 Catatan: *{parsed.note}*\n\n"
+            f"1️⃣ *Langkah 1*: Pilih Jenis Transaksi di bawah:"
         )
 
-        note_short = parsed.note[:25].replace("|", " ")
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "➖ Pengeluaran",
-                    callback_data=f"conf|expense|{parsed.amount}|{note_short}",
-                ),
-                InlineKeyboardButton(
-                    "➕ Pemasukan",
-                    callback_data=f"conf|income|{parsed.amount}|{note_short}",
-                ),
-            ],
-            [
-                InlineKeyboardButton("🍨 Jajan", callback_data=f"cat|Jajan|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("⛽ Bensin", callback_data=f"cat|Bensin|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("🛒 Kebutuhan", callback_data=f"cat|Kebutuhan|{parsed.amount}|{note_short}"),
-            ],
-            [
-                InlineKeyboardButton("🛍️ Belanja", callback_data=f"cat|Belanja|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("🏠 Rumah", callback_data=f"cat|Rumah|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("🤲 Amal", callback_data=f"cat|Amal|{parsed.amount}|{note_short}"),
-            ],
-            [
-                InlineKeyboardButton("📈 Trading", callback_data=f"cat|Trading|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("🌱 Bibit", callback_data=f"cat|Bibit|{parsed.amount}|{note_short}"),
-                InlineKeyboardButton("💰 Gaji", callback_data=f"cat|Gaji|{parsed.amount}|{note_short}"),
-            ],
-            [InlineKeyboardButton("❌ Batal", callback_data="conf|cancel|0|none")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = make_step1_type_keyboard(parsed.amount, parsed.note)
         await update.message.reply_text(
             prompt_text, parse_mode="Markdown", reply_markup=reply_markup
         )
         return
 
-    # Check budget warning for expense
+    # 5. Explicit format (e.g. 'dp 25k fore jajan'): Save transaction immediately
     budget_warning = None
     if parsed.type == "expense":
         budget_warning = check_budget_warning(parsed.category, parsed.amount)
 
-    # Explicit format: Save transaction immediately
     record = sheets_service.append_transaction(
         txn_type=parsed.type,
         category=parsed.category,
@@ -192,7 +256,7 @@ async def text_transaction_handler(
 async def callback_confirmation_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
-    """Handle inline button callbacks for transaction confirmation."""
+    """Handle 3-Step Wizard Inline Button Callbacks."""
     query = update.callback_query
     if not query:
         return
@@ -202,14 +266,124 @@ async def callback_confirmation_handler(
     data = query.data or ""
     parts = data.split("|")
 
-    if len(parts) < 4:
+    if len(parts) < 2:
         return
 
     prefix = parts[0]
-    if prefix not in ["conf", "cat"]:
+    if prefix not in ["wiz", "conf", "cat"]:
         return
 
-    if prefix == "conf":
+    # ----------------------------------------------------
+    # Handle Interactive Wizard ('wiz')
+    # ----------------------------------------------------
+    if prefix == "wiz":
+        step = parts[1]
+
+        if step == "cancel":
+            await query.edit_message_text("❌ Transaksi dibatalkan.")
+            return
+
+        # Wizard Step 1: Edits back to Type Selection
+        if step == "type":
+            # wiz|type|amount|note
+            amount = float(parts[2])
+            note = parts[3]
+            formatted_amt = format_currency(amount)
+            prompt = (
+                f"🔍 *Pencatatan Transaksi*\n\n"
+                f"💰 Nominal: *{formatted_amt}*\n"
+                f"📝 Catatan: *{note}*\n\n"
+                f"1️⃣ *Langkah 1*: Pilih Jenis Transaksi di bawah:"
+            )
+            markup = make_step1_type_keyboard(amount, note)
+            await query.edit_message_text(prompt, parse_mode="Markdown", reply_markup=markup)
+            return
+
+        # Wizard Step 2: Edits to Sheet Selection (DP vs EP)
+        if step == "sheet":
+            # wiz|sheet|txn_type|amount|note
+            txn_type = parts[2]
+            amount = float(parts[3])
+            note = parts[4]
+            formatted_amt = format_currency(amount)
+            type_label = "Pengeluaran ➖" if txn_type == "expense" else "Pemasukan ➕"
+            prompt = (
+                f"📄 *Pilih Sheet Target*\n\n"
+                f"Jenis: *{type_label}*\n"
+                f"💰 Nominal: *{formatted_amt}*\n"
+                f"📝 Catatan: *{note}*\n\n"
+                f"2️⃣ *Langkah 2*: Pilih Sheet tempat menyimpan:"
+            )
+            markup = make_step2_sheet_keyboard(txn_type, amount, note)
+            await query.edit_message_text(prompt, parse_mode="Markdown", reply_markup=markup)
+            return
+
+        # Wizard Step 3: Edits to Category Selection
+        if step == "cat":
+            # wiz|cat|txn_type|tab_type|amount|note
+            txn_type = parts[2]
+            tab_type = parts[3]
+            amount = float(parts[4])
+            note = parts[5]
+            formatted_amt = format_currency(amount)
+            type_label = "Pengeluaran ➖" if txn_type == "expense" else "Pemasukan ➕"
+            prompt = (
+                f"🏷️ *Pilih Kategori*\n\n"
+                f"Jenis: *{type_label}* | Target: *Sheet {tab_type.upper()}*\n"
+                f"💰 Nominal: *{formatted_amt}*\n"
+                f"📝 Catatan: *{note}*\n\n"
+                f"3️⃣ *Langkah 3*: Pilih Kategori transaksi:"
+            )
+            markup = make_step3_category_keyboard(txn_type, tab_type, amount, note)
+            await query.edit_message_text(prompt, parse_mode="Markdown", reply_markup=markup)
+            return
+
+        # Wizard Step 4: Final Save Transaction
+        if step == "save":
+            # wiz|save|txn_type|tab_type|CategoryName|amount|note
+            txn_type = parts[2]
+            tab_type = parts[3]
+            cat_name = parts[4]
+            amount = float(parts[5])
+            note = parts[6]
+
+            info = get_category_info(cat_name)
+            cat_emoji = info["emoji"]
+
+            budget_warning = None
+            if txn_type == "expense":
+                budget_warning = check_budget_warning(cat_name, amount)
+
+            record = sheets_service.append_transaction(
+                txn_type=txn_type,
+                category=cat_name,
+                amount=amount,
+                note=note,
+                tab_type=tab_type,
+            )
+
+            formatted_amt = format_currency(record["amount"])
+            formatted_bal = format_currency(record["balance"])
+
+            msg = TRANSACTION_SUCCESS_MESSAGE.format(
+                emoji=cat_emoji,
+                category=record["category"],
+                amount_formatted=formatted_amt,
+                note=record["note"],
+                datetime_formatted=record["created_at"],
+                balance_formatted=formatted_bal,
+            )
+
+            msg += f"\n📑 Sheet Target: *{record.get('created_at', '').split(', ')[-1]} ({tab_type.upper()})*"
+
+            if budget_warning:
+                msg += f"\n\n{budget_warning}"
+
+            await query.edit_message_text(msg, parse_mode="Markdown")
+            return
+
+    # Legacy confirmation handlers
+    if prefix in ["conf", "cat"]:
         action = parts[1]
         if action == "cancel":
             await query.edit_message_text("❌ Transaksi dibatalkan.")
@@ -222,50 +396,42 @@ async def callback_confirmation_handler(
             await query.edit_message_text("❌ Error memproses data transaksi.")
             return
 
-        cat_name, cat_emoji = detect_category(note, action)
-        txn_type = action
-    elif prefix == "cat":
-        cat_name = parts[1]
-        try:
-            amount = float(parts[2])
-            note = parts[3]
-        except ValueError:
-            await query.edit_message_text("❌ Error memproses data transaksi.")
-            return
+        if prefix == "conf":
+            cat_name, cat_emoji = detect_category(note, action)
+            txn_type = action
+        else:
+            cat_name = parts[1]
+            info = get_category_info(cat_name)
+            cat_emoji = info["emoji"]
+            txn_type = info["type"]
 
-        info = get_category_info(cat_name)
-        cat_emoji = info["emoji"]
-        txn_type = info["type"]
+        budget_warning = None
+        if txn_type == "expense":
+            budget_warning = check_budget_warning(cat_name, amount)
 
-    # Check budget warning
-    budget_warning = None
-    if txn_type == "expense":
-        budget_warning = check_budget_warning(cat_name, amount)
+        record = sheets_service.append_transaction(
+            txn_type=txn_type,
+            category=cat_name,
+            amount=amount,
+            note=note,
+        )
 
-    # Save transaction
-    record = sheets_service.append_transaction(
-        txn_type=txn_type,
-        category=cat_name,
-        amount=amount,
-        note=note,
-    )
+        formatted_amt = format_currency(record["amount"])
+        formatted_bal = format_currency(record["balance"])
 
-    formatted_amt = format_currency(record["amount"])
-    formatted_bal = format_currency(record["balance"])
+        msg = TRANSACTION_SUCCESS_MESSAGE.format(
+            emoji=cat_emoji,
+            category=record["category"],
+            amount_formatted=formatted_amt,
+            note=record["note"],
+            datetime_formatted=record["created_at"],
+            balance_formatted=formatted_bal,
+        )
 
-    msg = TRANSACTION_SUCCESS_MESSAGE.format(
-        emoji=cat_emoji,
-        category=record["category"],
-        amount_formatted=formatted_amt,
-        note=record["note"],
-        datetime_formatted=record["created_at"],
-        balance_formatted=formatted_bal,
-    )
+        if budget_warning:
+            msg += f"\n\n{budget_warning}"
 
-    if budget_warning:
-        msg += f"\n\n{budget_warning}"
-
-    await query.edit_message_text(msg, parse_mode="Markdown")
+        await query.edit_message_text(msg, parse_mode="Markdown")
 
 
 async def undo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
